@@ -1,0 +1,258 @@
+---
+title: "Practical Time Series Forecasting - Figures and Tables - Chapter "
+format: html
+editor: visual
+execute:
+  echo: true
+  warning: false
+---
+
+Scripts adapted from [Practical Time Series Forecasting - Datasets & R Code](https://www.forecastingbook.com/resources/data-and-code)
+
+## 5.2 Moving Average
+
+### Amtrak Fig 5-2.R
+
+```{r}
+#| message: false
+library(forecast)
+library(zoo)
+
+amtrak_csv <- here::here("data", "Amtrak data.csv")
+Amtrak.data <- read.csv(amtrak_csv)
+ridership.ts <- ts(Amtrak.data$Ridership, start = c(1991, 1), end = c(2004, 3), freq = 12)
+
+ma.trailing <- rollmean(ridership.ts, k = 12, align = "right")
+ma.centered <- ma(ridership.ts, order = 12)
+
+# Figure 5-2
+plot(ridership.ts, ylim = c(1300, 2200),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", 
+     xlim = c(1991,2004.25), main = "")
+axis(1, at = seq(1991, 2004.25, 1), labels = format(seq(1991, 2004.25, 1)))
+lines(ma.centered, lwd = 2)
+lines(ma.trailing, lwd = 2, lty = 2)
+legend(1994,2200, c("Ridership","Centered Moving Average", "Trailing Moving Average"), lty=c(1,1,2), lwd=c(1,2,2), bty = "n")  
+
+```
+
+## Amtrak Fig 5-3.R
+
+```{r}
+source(here::here('code', 'ptfs_functions.R'))
+
+nValid <- 36
+nTrain <- length(ridership.ts) - nValid
+train.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, nTrain))
+valid.ts <- window(ridership.ts, start = c(1991, nTrain + 1), end = c(1991, nTrain + nValid))
+ma.trailing <- rollmean(train.ts, k = 12, align = "right")
+last.ma <- tail(ma.trailing, 1)
+ma.trailing.pred <- ts(rep(last.ma, nValid), start = c(1991, nTrain + 1), end = c(1991, nTrain + nValid), freq = 12)
+
+# Figure 5-3
+plot(train.ts, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "")
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(ma.trailing, lwd = 2) 
+lines(ma.trailing.pred, lwd = 2, col = "blue", lty = 2) 
+lines(valid.ts)
+
+amtrak_ts_annotations(2500)
+```
+
+## 5.3 Differencing
+
+### Amtrak Fig 5-4.R
+
+```{r}
+# Figure 5-4
+par(mfrow = c(2,2))
+plot(ridership.ts, ylab = "Ridership", xlab = "Time", bty = "l", xlim = c(1991,2004.25), main = "Ridership")
+plot(diff(ridership.ts, lag = 12), ylab = "Lag-12", xlab = "Time", bty = "l", xlim = c(1991,2004.25), main = "Lag-12 Difference")
+plot(diff(ridership.ts, lag = 1), ylab = "Lag-1", xlab = "Time", bty = "l", xlim = c(1991,2004.25), main = "Lag-1 Difference")
+plot(diff(diff(ridership.ts, lag = 12), lag = 1), ylab = "Lag-12, then Lag-1", xlab = "Time", bty = "l", xlim = c(1991,2004.25), main = "Twice-Differenced (Lag-12, Lag-1)")
+```
+
+```{r}
+ridership.deseasonalized <- diff(ridership.ts, lag = 12)
+summary(tslm(ridership.deseasonalized ~ trend))
+```
+
+## 5.5 Advance Exponential Smoothing
+
+### Amtrak Fig 5-5
+
+```{r}
+diff.twice.ts <- diff(diff(ridership.ts, lag = 12), lag = 1)
+nValid <- 36
+nTrain <- length(diff.twice.ts) - nValid
+train.ts <- window(diff.twice.ts, start = c(1992, 2), end = c(1992, nTrain + 1))
+valid.ts <- window(diff.twice.ts, start = c(1992, nTrain + 2), end = c(1992, nTrain + 1 + nValid))
+
+ses <- ets(train.ts, model = "ANN", alpha = 0.2)
+ses.pred <- forecast(ses, h = nValid, level = 0)
+
+# Figure 5-5
+plot(ses.pred, ylim = c(-250, 300),  ylab = "Ridership (Twice-Differenced)", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(ses.pred$fitted, lwd = 2, col = "blue")
+lines(valid.ts)
+
+amtrak_ts_annotations(275, 30)
+
+```
+
+### Table 5.1
+
+```{r}
+# Table 5.1
+ses.opt <- ets(train.ts, model = "ANN")
+ses.opt.pred <- forecast(ses.opt, h = nValid, level = 0)
+ses.opt
+accuracy(ses.pred, valid.ts)
+accuracy(ses.opt.pred, valid.ts)
+
+```
+
+```{r}
+# Miscellaneous calculations below.
+ar1 <- auto.arima(train.ts)
+ar1
+arima.pred <- forecast(ar1, h = nValid)
+
+diff.once.ts <- diff(ridership.ts, lag = 12)
+diff.df <- data.frame("Time" = as.vector(time(ridership.ts)), "None" = as.vector(ridership.ts), "Once" = c(rep(NA, 12), as.vector(diff.once.ts)), "Twice" = c(rep(NA, 13), as.vector(diff.twice.ts)), "Pred" = c(rep(NA, length(ridership.ts) - nValid), as.vector(ses.pred$mean)))
+
+rts <- window(ridership.ts, start = c(1991, 1), end = c(1991, nTrain))
+rets <- ets(rts)
+rets
+rets.pred <- forecast(rets, h = nValid)
+
+```
+
+```{r}
+plot(rets.pred)
+```
+
+### Figure 5.6
+
+```{r}
+ridership.ts <- ts(Amtrak.data$Ridership, start = c(1991, 1), end = c(2004, 3), freq = 12)
+# 
+nValid <- 36
+nTrain <- length(ridership.ts) - nValid
+train.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, nTrain))
+valid.ts <- window(ridership.ts, start = c(1991, nTrain + 1), end = c(1991, nTrain + nValid))
+
+hwin <- ets(train.ts, model = "MAA")
+hwin.pred <- forecast(hwin, h = nValid, level = 0)
+
+# Figure 5.6
+plot(hwin.pred, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(hwin.pred$fitted, lwd = 2, col = "blue")
+lines(valid.ts)
+
+amtrak_ts_annotations()
+```
+
+### Table 5.2
+
+```{r}
+# Table 5.2
+hwin
+hwin$states[1, ]  # Initial states
+hwin$states[nrow(hwin$states), ]  # Final states
+#hwin$states
+
+```
+
+## 5.6 Summary of Exponential Smoothing in R using `ets`
+
+### Automatic Model Selection in `ets`
+
+### Table 5.4
+
+```{r}
+# Table 5.4
+ets.opt <- ets(train.ts, restrict = FALSE, allow.multiplicative.trend = TRUE)
+ets.opt
+```
+
+```{r}
+ets.opt.pred <- forecast(ets.opt, h = nValid, level = 0)
+plot(ets.opt.pred)
+```
+
+### Table 5.5
+
+```{r}
+# Table 5.5
+accuracy(hwin.pred, valid.ts)
+accuracy(ets.opt.pred, valid.ts)
+```
+
+## 5.7 Extensions of Exponential Smoothing
+
+### Figure 5.7
+
+```{r}
+# library(forecast)
+suppressMessages(library(lubridate))
+
+bike_hourly_csv <- here::here('data', "BikeSharingHourly.csv")
+bike.hourly.df <- read.csv(bike_hourly_csv)
+nTotal <- length(bike.hourly.df$cnt[13004:13747])  # 31 days * 24 hours/day = 744 hours
+bike.hourly.msts <- msts(bike.hourly.df$cnt[13004:13747], seasonal.periods = c(24, 168), start = c(0, 1))
+
+nTrain <- 21 * 24  # 21 days of hourly data
+nValid <- nTotal - nTrain  # 10 days of hourly data
+yTrain.msts <- window(bike.hourly.msts, start = c(0, 1), end = c(0, nTrain))
+yValid.msts <- window(bike.hourly.msts, start = c(0, nTrain + 1), end = c(0, nTotal))
+
+bike.hourly.dshw.pred <- dshw(yTrain.msts, h = nValid)
+bike.hourly.dshw.pred.mean <- msts(bike.hourly.dshw.pred$mean, seasonal.periods = c(24, 168), start = c(0, nTrain + 1))
+plot(yTrain.msts, xlim = c(0,4 + 3/7), ylab = "Hourly Bike Rentals")
+lines(bike.hourly.dshw.pred.mean, lwd = 2, col = "blue")
+
+```
+
+```{r}
+# Compare to stlm and tbats.
+bike.hourly.stlm <- stlm(yTrain.msts, lambda = 0)
+bike.hourly.stlm.pred <- forecast(bike.hourly.stlm, h = nValid)
+bike.hourly.tbats <- tbats(yTrain.msts)
+bike.hourly.tbats.pred <- forecast(bike.hourly.tbats, h = nValid) 
+```
+
+```{r}
+#| fig-height: 8
+
+#par(mfrow = c(1, 3))
+par(mfrow = c(3, 1))
+plot(yTrain.msts, xlim = c(0,4 + 3/7), ylab = "Hourly Bike Rentals", ylim = c(0, 1000))
+lines(bike.hourly.dshw.pred.mean, lwd = 2, col = "blue")
+plot(bike.hourly.stlm.pred, ylim = c(0, 1000))
+plot(bike.hourly.tbats.pred, ylim = c(0, 1000))
+```
+
+### Figure 5.8
+
+```{r}
+#library(forecast)
+
+bike_daily_csv <- here::here("data", "BikeSharingDaily.csv")
+bike.daily.df <- read.csv(bike_daily_csv)
+bike.daily.msts <- msts(bike.daily.df$cnt, seasonal.periods = c(7, 365.25))
+
+bike.daily.tbats <- tbats(bike.daily.msts)
+bike.daily.tbats.pred <- forecast(bike.daily.tbats, h = 365)
+
+bike.daily.stlm <- stlm(bike.daily.msts, s.window = "periodic", method = 'ets')
+bike.daily.stlm.pred <- forecast(bike.daily.stlm, h = 365)
+
+par(mfrow = c(2, 1))
+plot(bike.daily.tbats.pred, ylim = c(0, 9000), xlab = "Year", ylab = "Daily Bike Rentals",main = "TBATS")
+plot(bike.daily.stlm.pred, ylim = c(0, 9000), xlab = "Year", ylab = "Daily Bike Rentals",main = "STL + ETS")
+
+```
+
+Note ... this code for `stlm` doesn't appear to be adding the `Level` back to the forecast appropriately.

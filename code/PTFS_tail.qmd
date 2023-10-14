@@ -1,0 +1,16 @@
+---
+title: "Practical Time Series Forecasting - Figures and Tables"
+format: html
+editor: visual
+execute:
+  echo: true
+  warning: false
+---
+
+Reference: *Practical Time Series Forecasting with R: A Hands-On Guide*
+
+by Galit Schmueli
+
+ISBN-10: 0997847921
+
+## 

@@ -1,0 +1,52 @@
+---
+title: "Practical Time Series Forecasting- Figures and Tables"
+format: 
+  html:
+    toc: true
+editor: visual
+resource_files:
+- data/*
+- code/*
+- image/*
+---
+
+```{r}
+#| echo: false
+library(rmarkdown)
+```
+
+# Introduction
+
+This document is a compilation of the of Figures and Tables presented in ***Practical Time Series With R - A Hands On Guide*** \[2nd edition\] by Shmueli, Galit; Lichtendahl Jr, Kenneth. Axelrod Schnall Publishers. Kindle Edition. C. The [Datasets & R Code](https://www.forecastingbook.com/resources/data-and-code) supplied with textbook website (with slight tweaks) is presented hereto match the textbook.
+
+Much has changed with both R and the time series frameworks since the book was originally published, so updated R code is provided to show alternative, more modern techniques.\
+
+# Chapter 2 - Time Series Date
+
+{{< include code/PTFS_ch02.qmd >}}
+
+## Updated code using `tidyverse` and introduce `plotly` for interactivity
+
+{{< include code/PTFS_ch02_addendum.qmd >}}
+
+# Chapter 3 - Performance Evaluation
+
+{{< include code/PTFS_ch03.qmd >}}
+
+# Chapter 5 - Smoothing Methods
+
+{{< include code/PTFS_ch05.qmd >}}
+
+# Chapter 6 - Regression-Based Models: Capturing Trend and Seasonality
+
+{{< include code/PTFS_ch06.qmd >}}
+
+# Chapter 7 - Regression-Based Models: Autocorrelation & External Information
+
+{{< include code/PTFS_ch07.qmd >}}
+
+# Chapter 8 - Forecasting Binary Outcomes
+
+{{< include code/PTFS_ch08.qmd >}}
+
+{{< include code/PTFS_tail.qmd >}}

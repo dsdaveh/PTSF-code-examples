@@ -1,0 +1,146 @@
+---
+title: "Practical Time Series Forecasting - Figures and Tables - Chapter 6"
+format: html
+editor: visual
+execute:
+  echo: true
+  warning: false
+---
+
+Scripts adapted from [Practical Time Series Forecasting - Datasets & R Code](https://www.forecastingbook.com/resources/data-and-code)
+
+## 
+
+## 6.1 Model with Trend
+
+### Figure 6.2
+
+```{r}
+source(here::here('code', 'ptfs_functions.R'))
+
+#| message: false
+library(forecast)
+library(zoo)
+
+amtrak_csv <- here::here("data", "Amtrak data.csv")
+Amtrak.data <- read.csv(amtrak_csv)
+ridership.ts <- ts(Amtrak.data$Ridership, start = c(1991, 1), end = c(2004, 3), freq = 12)
+
+nValid <- 36
+nTrain <- length(ridership.ts) - nValid
+train.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, nTrain))
+valid.ts <- window(ridership.ts, start = c(1991, nTrain + 1), end = c(1991, nTrain + nValid))
+
+train.lm <- tslm(train.ts ~ trend)
+
+# Figure 6.2
+plot(train.ts, xlab = "Time", ylab = "Ridership", ylim = c(1300, 2300), bty = "l")
+lines(train.lm$fitted, lwd = 2)
+```
+
+### Figure 6.3
+
+```{r}
+train.lm.pred <- forecast(train.lm, h = nValid, level = 0)
+plot(train.lm.pred, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(train.lm.pred$fitted, lwd = 2, col = "blue") 
+
+amtrak_ts_annotations(2500)
+```
+
+### Table 6.1
+
+```{r}
+# Table 6.1
+summary(train.lm)
+```
+
+### Figure 6.4
+
+```{r}
+train.lm.expo.trend <- tslm(train.ts ~ trend, lambda = 0)
+train.lm.expo.trend.pred <- forecast(train.lm.expo.trend, h = nValid, level = 0)
+
+train.lm.linear.trend <- tslm(train.ts ~ trend, lambda = 1)
+train.lm.linear.trend.pred <- forecast(train.lm.linear.trend, h = nValid, level = 0)
+
+# Figures 6-3/6-4
+plot(train.lm.expo.trend.pred, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(train.lm.expo.trend.pred$fitted, lwd = 2, col = "blue")  # Added in 6-4
+lines(train.lm.linear.trend.pred$fitted, lwd = 2, col = "black", lty = 3)
+lines(train.lm.linear.trend.pred$mean, lwd = 2, col = "black", lty = 3)
+lines(valid.ts)
+
+amtrak_ts_annotations(2500)
+```
+
+### Table 6.2
+
+```{r}
+train.lm.poly.trend <- tslm(train.ts ~ trend + I(trend^2))
+summary(train.lm.poly.trend)
+```
+
+## 6.2 Model with Seasonality
+
+### Table 6.3
+
+```{r}
+# Table 6.3
+train.lm.season <- tslm(train.ts ~ season)
+summary(train.lm.season)
+train.lm.season.pred <- forecast(train.lm.season, h = nValid, level = 0)
+```
+
+### Figure 6.6
+
+```{r}
+#| fig-height: 8
+# Figure 6-6
+par(mfrow = c(2,1))
+plot(train.lm.season.pred, ylim = c(1300, 2625),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(train.lm.season.pred$fitted, lwd = 2, col = "blue")
+lines(valid.ts)
+amtrak_ts_annotations(2500)
+
+plot(train.lm.season.pred$residuals, ylim = c(-400, 550),  ylab = "Residuals", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "")
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(train.ts - train.lm.season.pred$fitted)
+lines(valid.ts - train.lm.season.pred$mean)
+amtrak_ts_annotations(500)
+
+```
+
+## 6.3 Model with Trend and Seasonality
+
+### Table 6.4
+
+```{r}
+train.lm.trend.season <- tslm(train.ts ~ trend + I(trend^2) + season)
+train.lm.trend.season.pred <- forecast(train.lm.trend.season, h = nValid, level = 0)
+
+# Table 6-4
+summary(train.lm.trend.season)
+```
+
+### Figure 6.7
+
+```{r}
+# Figure 6-7
+par(mfrow = c(2,1))
+plot(train.lm.trend.season.pred, ylim = c(1300, 2625),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(train.lm.trend.season.pred$fitted, lwd = 2, col = "blue")
+lines(valid.ts)
+amtrak_ts_annotations(2500)
+
+plot(train.lm.trend.season.pred$residuals, ylim = c(-400, 550),  ylab = "Residuals", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "")
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(train.ts - train.lm.trend.season.pred$fitted)
+lines(valid.ts - train.lm.trend.season.pred$mean)
+amtrak_ts_annotations(500)
+
+```

@@ -1,0 +1,288 @@
+---
+title: "Practical Time Series Forecasting - Figures and Tables - Chapter 3"
+format: html
+editor: visual
+execute:
+  echo: true
+  warning: false
+---
+
+Scripts adapted from [Practical Time Series Forecasting - Datasets & R Code](https://www.forecastingbook.com/resources/data-and-code)
+
+## 3.1 Data Partitioning
+
+### Figure 3.1
+
+```{r}
+library(forecast)
+
+amtrak_csv <- here::here("data", "Amtrak data.csv")
+Amtrak.data <- read.csv(amtrak_csv)
+ridership.ts <- ts(Amtrak.data$Ridership, start = c(1991, 1), end = c(2004, 3), freq = 12)
+
+# Figure 3-1
+plot(ridership.ts, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25))
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1), digits = 2))
+lines(c(2004.25 - 3 , 2004.25 - 3), c(0, 3500))
+lines(c(2004.25, 2004.25), c(0, 3500))
+text(1996.25, 2500, "Training")
+text(2002.75, 2500, "Validation")
+text(2005.25, 2500, "Future")
+arrows(2004 - 3,2450,1991.25,2450,code=3,length=0.1,lwd=1,angle=30)
+arrows(2004.5 - 3,2450,2004,2450,code=3,length=0.1,lwd=1,angle=30)
+arrows(2004.5,2450,2006,2450,code=3,length=0.1,lwd=1,angle=30)
+```
+
+### Figure 3.2
+
+Since the textbook omits the annotation in it's examples for clarity there is a mismatch between the code and the graphics output. We'll create a simple function t add the annotation to subsequent plots to keep the examples minimal.
+
+```{r}
+source(here::here('code', 'ptfs_functions.R'))
+amtrak_ts_annotations
+
+```
+
+```{r}
+stepsAhead <- 36
+nTrain <- length(ridership.ts) - stepsAhead
+train.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, nTrain))
+valid.ts <- window(ridership.ts, start = c(1991, nTrain + 1), end = c(1991, nTrain + stepsAhead))
+ridership.lm <-  tslm(train.ts ~ trend + I(trend^2))
+ridership.lm.pred <- forecast(ridership.lm, h = stepsAhead, level = 0)
+
+# Figure 3-2
+plot(ridership.lm.pred, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1))) 
+lines(ridership.lm$fitted, lwd = 2)
+lines(valid.ts)
+
+amtrak_ts_annotations(2500)
+
+
+```
+
+## 3.3 Measuring Predictive Accuracy
+
+### Table 3.1
+
+```{r}
+res <- round(valid.ts - ridership.lm.pred$mean, digits = 3)
+table_3_1 <-cbind(ridership.lm.pred$mean, valid.ts, res) 
+head(table_3_1, 3)
+message('...')
+tail(table_3_1, 1)
+
+accuracy(ridership.lm.pred$mean, valid.ts)
+```
+
+## 3.4 Evaluating Forecast Uncertainty
+
+### Figure 3.3
+
+```{r}
+# Figure 3-3
+plot(ridership.lm.pred$residuals, ylim = c(-400, 500),  ylab = "Residuals", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "")
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(valid.ts - ridership.lm.pred$mean, lwd = 1)
+
+amtrak_ts_annotations(500)
+```
+
+```{r}
+# Figure 3-4
+hist(ridership.lm.pred$residuals,  ylab = "Frequency", xlab = "Forecast Error", bty = "l", main = "")
+```
+
+### Figure 3.5
+
+```{r}
+nValid <- 36
+nTrain <- length(ridership.ts) - nValid
+train.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, nTrain))
+valid.ts <- window(ridership.ts, start = c(1991, nTrain + 1), end = c(1991, nTrain + nValid))
+ridership.lm <-  tslm(train.ts ~ trend + I(trend^2))
+ridership.lm.pred <- forecast(ridership.lm, h = nValid, level = 95)
+
+plot(ridership.lm.pred, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1))) 
+lines(ridership.lm$fitted, lwd = 2)
+lines(valid.ts)
+
+amtrak_ts_annotations(2500)
+```
+
+## 3.5 Advanced Data Partitioning: Roll-Forward Validation
+
+### Figure 3.6
+
+```{r}
+tumblr_csv <- here::here('data', 'Tumblr.csv')
+tumblr.data <- read.csv(tumblr_csv)
+people.ts <- ts(tumblr.data$People.Worldwide) / 1000000
+
+# Run three exponential smoothing models: AAN, MMN, and MMdN.
+# MMN stands for Multiplicative error, Multiplicative trend, and No seasonality. MMdN stands for Multiplicative error, Multiplicative damped trend, and No seasonality.
+people.ets.AAN <- ets(people.ts, model = "AAN")
+people.ets.MMN <- ets(people.ts, model = "MMN", damped = FALSE)
+people.ets.MMdN <- ets(people.ts, model = "MMN", damped = TRUE)
+
+# Create their prediction "cones" for 115 months into the future (Jun 2013 to Dec 2022).
+people.ets.AAN.pred <- forecast(people.ets.AAN, h = 115, level = c(0.2, 0.4, 0.6, 0.8))
+people.ets.MMN.pred <- forecast(people.ets.MMN, h = 115, level = c(0.2, 0.4, 0.6, 0.8))
+people.ets.MMdN.pred <- forecast(people.ets.MMdN, h = 115, level = c(0.2, 0.4, 0.6, 0.8))
+
+# Compare the three models' "forecast cones" visually.
+
+par(mfrow = c(1, 3)) # This command sets the plot window to show 1 row of 3 plots.
+plot(people.ets.AAN.pred, xlab = "Month", ylab = "People (in millions)", ylim = c(0, 1000))
+plot(people.ets.MMN.pred, xlab = "Month", ylab="People (in millions)", ylim = c(0, 1000))
+plot(people.ets.MMdN.pred, xlab = "Month", ylab="People (in millions)", ylim = c(0, 1000))
+
+# Examine the lower and upper limits of the MMN model's prediction cones.
+# people.ets.MMN.pred$lower %>% head()
+# people.ets.MMN.pred$upper %>% tail()
+```
+
+### Figure 3.7
+
+```{r}
+fixed.nValid <- 36
+fixed.nTrain <- length(ridership.ts) - fixed.nValid
+train.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, fixed.nTrain))
+valid.ts <- window(ridership.ts, start = c(1991, fixed.nTrain + 1), end = c(1991, fixed.nTrain + fixed.nValid))
+naive.fixed <- naive(train.ts, h = fixed.nValid)
+naive.roll <- ts(Amtrak.data$Ridership[fixed.nTrain:(fixed.nTrain + fixed.nValid - 1)], start = c(1991, fixed.nTrain + 1), end = c(1991, fixed.nTrain + fixed.nValid), freq = 12)
+
+# Figure 3-6
+plot(train.ts, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "")
+axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
+lines(naive.fixed$mean, lwd = 2, col = "blue", lty = 2)
+lines(naive.roll, lwd = 2, col = "blue", lty = 2)
+lines(valid.ts)
+
+amtrak_ts_annotations()
+```
+
+### Table 3.3
+
+```{r}
+suppressMessages(library(tidyverse))
+
+fixed.nValid <- 36
+fixed.nTrain <- length(ridership.ts) - fixed.nValid
+mae <- rep(0,fixed.nValid)
+rmse <- rep(0,fixed.nValid)
+mape <- rep(0,fixed.nValid)
+for(i in 1:36) {
+  stepsAhead <- i
+  error <- rep(0, fixed.nValid - stepsAhead + 1)
+  percent.error <- rep(0, fixed.nValid - stepsAhead + 1)
+  for(j in fixed.nTrain:(fixed.nTrain + fixed.nValid - stepsAhead)) {
+    train.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, j))
+    valid.ts <- window(ridership.ts, start = c(1991, j + stepsAhead), end = c(1991, j + stepsAhead))
+    naive.pred <- naive(train.ts, h = stepsAhead)
+    error[j - fixed.nTrain + 1] <- valid.ts - naive.pred$mean[stepsAhead]
+    percent.error[j - fixed.nTrain + 1] <- error[j - fixed.nTrain + 1] / valid.ts
+  }
+  mae[i] <- mean(abs(error))
+  rmse[i] <- sqrt(mean(error^2))
+  mape[i] <- mean(abs(percent.error))
+}
+# mean(mae)
+# mean(rmse)
+# mean(mape)
+
+train.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, fixed.nTrain))
+valid.ts <- window(ridership.ts, start = c(1991, fixed.nTrain + 1), end = c(1991, fixed.nTrain + fixed.nValid))
+naive.pred <- naive(train.ts, h = fixed.nValid)
+snaive.pred <- snaive(train.ts, h = fixed.nValid)
+# accuracy(naive.pred, valid.ts)
+# accuracy(snaive.pred, valid.ts)
+naive_acc <- accuracy(naive.pred, valid.ts)
+
+method_desc <- sprintf('Rolling Forward %d-months ahead', 1:length(mae))
+table_3_3 <- tibble(Method = method_desc, MAE = mae, RMSE = rmse, MAPE = mape) %>% bind_rows(tibble(Method = 'Roll Forward Overall',
+                                                                                                    MAE = mean(mae),
+                                                                                                    RMSE = mean(rmse),
+                                                                                                    MAPE = mean(mape)),
+                                                                                             tibble(Method = 'Fixed Partition Overall',
+                                                                                                    MAE = naive_acc['Test set', 'MAE'],
+                                                                                                    RMSE = naive_acc['Test set', 'RMSE'],
+                                                                                                    MAPE = naive_acc['Test set', 'MAPE']))
+
+
+table_3_3_abbr <- bind_rows(
+  table_3_3[1:3, ],
+  tibble(Method = '...'),
+  table_3_3[36:38,]
+)
+
+table_3_3_abbr
+```
+
+### Table 3.4
+
+```{r}
+suppressMessages(library(lubridate))
+table_3_4 <- bind_rows(tibble(
+  Period = naive.pred %>% as.data.frame %>% row.names.data.frame(),
+  Actual = valid.ts,
+  `Naive Forecast` = naive.pred$mean,
+  `Seasonal Naive Forecast` = snaive.pred$mean
+))
+table_3_4_disp <- bind_rows(
+  table_3_4[1:3, ],
+  tibble(Period = '...'),
+  table_3_4[nrow(table_3_4), ]
+)
+table_3_4_disp
+```
+
+### Table 3.5
+
+```{r}
+snaive.pred <- snaive(train.ts, h = fixed.nValid)
+snaive_acc <- accuracy(snaive.pred, valid.ts)
+
+table_3_5 <-  bind_rows(
+  tibble(Method = 'Fixed Partition Overall',
+                     MAE = naive_acc['Test set', 'MAE'],
+                     RMSE = naive_acc['Test set', 'RMSE'],
+                     MAPE = naive_acc['Test set', 'MAPE']),
+  tibble(Method = 'Fixed Partition Overall',
+                     MAE = snaive_acc['Test set', 'MAE'],
+                     RMSE = snaive_acc['Test set', 'RMSE'],
+                     MAPE = snaive_acc['Test set', 'MAPE']))
+table_3_5
+```
+
+### Table 3.5
+
+```{r}
+fixed.nValid <- 36
+fixed.nTrain <- length(ridership.ts) - fixed.nValid
+stepsAhead <- 1
+error.naive <- rep(0, fixed.nValid - stepsAhead + 1)
+percent.error.naive <- rep(0, fixed.nValid - stepsAhead + 1)
+error.snaive <- rep(0, fixed.nValid - stepsAhead + 1)
+percent.error.snaive <- rep(0, fixed.nValid - stepsAhead + 1)
+for(j in fixed.nTrain:(fixed.nTrain + fixed.nValid - stepsAhead)) {
+  train.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, j))
+  valid.ts <- window(ridership.ts, start = c(1991, j + stepsAhead), end = c(1991, j + stepsAhead))
+  naive.pred <- naive(train.ts, h = stepsAhead)
+  snaive.pred <- snaive(train.ts, h = stepsAhead)
+  error.naive[j - fixed.nTrain + 1] <- valid.ts - naive.pred$mean[stepsAhead]
+  percent.error.naive[j - fixed.nTrain + 1] <- error.naive[j - fixed.nTrain + 1] / valid.ts
+  error.snaive[j - fixed.nTrain + 1] <- valid.ts - snaive.pred$mean[stepsAhead]
+  percent.error.snaive[j - fixed.nTrain + 1] <- error.snaive[j - fixed.nTrain + 1] / valid.ts
+}
+
+table_3_6 <- tibble(
+  Method = c('Naive Forecast', 'Seasonal Naive Forecast'),
+  MAE = c(mean(abs(error.naive)), mean(abs(error.snaive))),
+  RMSE = c(sqrt(mean(error.naive^2)), sqrt(mean(error.snaive^2))),
+  MAPE = c(mean(abs(percent.error.naive)), mean(abs(percent.error.snaive)))
+)
+table_3_6
+```
