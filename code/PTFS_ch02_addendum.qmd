@@ -1,49 +1,14 @@
 ```{r}
 #| message: false
+#| echo: false
 library(tidyverse)
 library(readxl)
-library(lubridate)
+library(fpp3)
 ```
 
+## Interactive Visualization with Plotly
 
-## Visualizing Time Series the tidyverse
-
-```{r}
-Amtrak_data <- read_excel(here::here("data", "Amtrak data.xls"), 
-    col_types = c("date", "numeric"))
-```
-```{r}
-#| include: false
-# this section in case the pre-requisite PTFS_ch02.qmd has not been run
-if (! exists('ridership.ts')) ridership.ts <- ts(Amtrak_data$Ridership, start = c(1991,1), end = c(2004, 3), freq = 12)
-if (! exists('ridership.lm')) {
-  library(forecast)
-  ridership.lm <- tslm(ridership.ts ~ trend + I(trend^2))
-}
-```
-```{r}
-Amtrak_data %>% 
-  mutate(fitted = ridership.lm$fitted) %>% 
-  ggplot(aes(Month, Ridership)) +
-  geom_line(alpha = 0.5) +
-  geom_line(aes(y = fitted))
-```
-
-
-
-
-
-```{r}
-Amtrak_data %>% 
-  mutate(fitted = ridership.lm$fitted) %>% 
-  filter(year(Month) >= 1997,
-         year(Month) <= 2000) %>% 
-  ggplot(aes(Month, Ridership)) +
-  geom_line(alpha = 0.5) +
-  geom_line(aes(y = fitted))
-```
-
-Interactive Visualization with Plotly
+Athought the textbook suggest proprietry programs for interactive data visualizations, there are multiple open source frameworks for this as well. A popular R library is plotly, which can be used to interactively interrogate plots as demonstrated below.
 
 ### Baregg Tunnel Traffic
 
@@ -62,26 +27,20 @@ ggplotly(tt_raw_plt)
 ```
 
 ```{r}
-#| warning: false
-#| message: false
-tt_yearly_avg <- TunnelTraffic %>% 
-  mutate(year = year(Day),
-         month = month(Day)) %>% 
-  group_by(year, month) %>% 
-  summarise(`Vehicle Traffic` = mean(`# Vehicles in tunnel`),
-            .groups = 'drop') %>% 
-  mutate(Month = factor(month, labels = month.name ))
+monthly_traffic <- TunnelTraffic %>% 
+  mutate(Month = yearmonth(Day)) %>% 
+  group_by(Month) %>% 
+  summarise(vehicles = mean(`# Vehicles in tunnel`)) %>% 
+  as_tsibble(index = Month) 
 
-tt_year_plt <- tt_yearly_avg %>% 
-  ggplot(aes(Month, `Vehicle Traffic`, group = 1)) +
-  geom_line() +
-  geom_smooth(span = 12) +
-  ylim(0, NA) +
-  facet_wrap(~ year, scales = "free_x") +
-  theme(axis.text.x = element_text(angle = 45))
+traffic_plt <- monthly_traffic %>% 
+  gg_season(vehicles)
 
-ggplotly(tt_year_plt)
+ggplotly(traffic_plt)
 ```
+
+\
+\
 
 ```{r}
 tt_wday_plt <- TunnelTraffic %>% 
@@ -94,7 +53,6 @@ tt_wday_plt <- TunnelTraffic %>%
 ggplotly(tt_wday_plt)
 ```
 
-Plotly enables interactive filtering. Double click on `Day of Week` element in the legend to isolate a single day, subsequent clicks add additional days back to the displayed data.
-For example, by removing everything except Thursday and Saturday, you can reproduce the image below using the interactive plotly image above.
+Plotly enables interactive filtering. Double click on `Day of Week` element in the legend to isolate a single day, subsequent clicks add additional days back to the displayed data. For example, by removing everything except Thursday and Saturday, you can reproduce the image below using the interactive plotly image above.
 
 ![Example Plotly Image filtered by Day of Week](image/TunnelTrafic_plotly_example.png)

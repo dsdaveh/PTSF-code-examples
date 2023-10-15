@@ -3,11 +3,19 @@ title: "Practical Time Series Forecasting - Figures and Tables - Chapter 2"
 format: html
 editor: visual
 execute:
-  echo: yes
-  warning: no
+  echo: true
+  warning: false
 resource_files:
 - data/Amtrak data.csv
 ---
+
+```{r}
+#| echo: false
+library(tidyverse)
+library(readxl)
+library(fpp3)
+
+```
 
 ## 2.3 Visualizing Time Series
 
@@ -20,6 +28,36 @@ ridership.ts <- ts(Amtrak.data$Ridership, start = c(1991,1), end = c(2004, 3), f
 
 # Figure 2-2
 plot(ridership.ts, xlab = "Time", ylab = "Ridership", ylim = c(1300, 2300), bty = "l")
+```
+
+#### Update
+
+See \[[Forecasting: Principles and Practice](https://otexts.com/fpp3/)\] https://otexts.com/fpp3/tsibbles.html
+
+We need to reprocess the data. The CSV provided by text website has malformed dates, but there is an `.xls` file we can use instead.
+
+```{r}
+library(fpp3)
+
+ridership <- read_excel(here::here("data", "Amtrak data.xls"), 
+    col_types = c("date", "numeric")) %>% 
+  mutate(Month = yearmonth(Month)) %>% 
+  as_tsibble(index = Month)
+```
+
+```{r}
+ridership %>% 
+  autoplot(Ridership)
+
+```
+
+Although not called for in the textbook, we can also use a `seasonal plot` to help identify months with peak ridership and confirm a general upward trend in the later years contained in the dataset
+
+```{r}
+ridership %>% 
+  gg_season(Ridership, labels = "right") +
+  labs(title = "Seasonal plot of Amtrak Ridership")
+  
 ```
 
 ### Figure 2.4
@@ -37,5 +75,33 @@ plot(ridership.ts, xlab = "Time", ylab = "Ridership", ylim = c(1300, 2300), bty 
 lines(ridership.lm$fitted, lwd = 2)
 ridership.ts.zoom <- window(ridership.ts, start = c(1997, 1), end = c(2000, 12))
 plot(ridership.ts.zoom, xlab = "Time", ylab = "Ridership", ylim = c(1300, 2300), bty = "l")
+
+```
+
+#### Update
+
+We'll leave these as two separate plots, including the trend model on both:
+
+```{r}
+library(fable)
+
+ridership_lm <- ridership %>% 
+  model(tslm = TSLM(Ridership ~ trend() + I(trend()^2))) %>% 
+  augment() 
+ridership_lm %>% 
+  autoplot(Ridership, color = "grey") +
+  geom_line(aes(y = .fitted), color = "blue")
+
+```
+
+Zoom into the years 1997-2001
+
+```{r}
+ridership_lm %>% 
+  filter(Month >= yearmonth('1997 Jan'),
+         Month <= yearmonth('2001 Dec')) %>% 
+  autoplot(Ridership, color = "grey") +
+  geom_line(aes(y = .fitted), color = "blue")
+
 
 ```

@@ -25,4 +25,6 @@ install.packages('shiny')
 install.packages('rsconnect')
 install.packages('here')
 install.packages('caret')
+install.packages('fpp3')
+
 ```
