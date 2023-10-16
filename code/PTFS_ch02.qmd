@@ -11,6 +11,7 @@ resource_files:
 
 ```{r}
 #| echo: false
+#| message: false
 library(tidyverse)
 library(readxl)
 library(fpp3)
@@ -51,12 +52,20 @@ ridership %>%
 
 ```
 
-Although not called for in the textbook, we can also use a `seasonal plot` to help identify months with peak ridership and confirm a general upward trend in the later years contained in the dataset
+Although not called for in the textbook, we can also use  `seasonal`  plot to help identify months with peak ridership and confirm a general upward trend in the later years contained in the dataset
 
 ```{r}
 ridership %>% 
   gg_season(Ridership, labels = "right") +
   labs(title = "Seasonal plot of Amtrak Ridership")
+  
+```
+We can also look at subseries to see if trends are consistent within each month. 
+
+```{r}
+ridership %>% 
+  gg_subseries(Ridership) +
+  labs(title = 'Amtrak Ridership Trends by Month')
   
 ```
 

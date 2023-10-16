@@ -34,7 +34,9 @@ monthly_traffic <- TunnelTraffic %>%
   as_tsibble(index = Month) 
 
 traffic_plt <- monthly_traffic %>% 
-  gg_season(vehicles)
+  gg_season(vehicles) +
+  labs(title = 'Baregg Tunnel Traffic',
+       y = 'Average # of Vehicles/Month')
 
 ggplotly(traffic_plt)
 ```
