@@ -52,7 +52,7 @@ ridership %>%
 
 ```
 
-Although not called for in the textbook, we can also use  `seasonal`  plot to help identify months with peak ridership and confirm a general upward trend in the later years contained in the dataset
+Although not called for in the textbook, we can also use `seasonal` plot to help identify months with peak ridership and confirm a general upward trend in the later years contained in the dataset
 
 ```{r}
 ridership %>% 
@@ -60,7 +60,8 @@ ridership %>%
   labs(title = "Seasonal plot of Amtrak Ridership")
   
 ```
-We can also look at subseries to see if trends are consistent within each month. 
+
+We can also look at subseries to see if trends are consistent within each month.
 
 ```{r}
 ridership %>% 
@@ -97,10 +98,10 @@ library(fable)
 ridership_lm <- ridership %>% 
   model(tslm = TSLM(Ridership ~ trend() + I(trend()^2))) %>% 
   augment() 
+
 ridership_lm %>% 
   autoplot(Ridership, color = "grey") +
   geom_line(aes(y = .fitted), color = "blue")
-
 ```
 
 Zoom into the years 1997-2001
@@ -109,6 +110,17 @@ Zoom into the years 1997-2001
 ridership_lm %>% 
   filter(Month >= yearmonth('1997 Jan'),
          Month <= yearmonth('2001 Dec')) %>% 
+  autoplot(Ridership, color = "grey") +
+  geom_line(aes(y = .fitted), color = "blue")
+
+
+```
+
+Same as above using the `filter_index` .
+
+```{r}
+ridership_lm %>% 
+  filter_index('1997 Jan' ~ '2001 Dec') %>% 
   autoplot(Ridership, color = "grey") +
   geom_line(aes(y = .fitted), color = "blue")
 

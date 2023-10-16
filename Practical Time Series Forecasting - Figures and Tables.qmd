@@ -19,13 +19,15 @@ library(rmarkdown)
 
 This document is a compilation of the of Figures and Tables presented in ***Practical Time Series With R - A Hands On Guide*** \[2nd edition\] by Shmueli, Galit; Lichtendahl Jr, Kenneth. Axelrod Schnall Publishers. Kindle Edition. C. The [Datasets & R Code](https://www.forecastingbook.com/resources/data-and-code) supplied with textbook website (with slight tweaks) is presented here to match the textbook as baseline for experimenting with code provided.
 
-Much has changed with both R and the time series frameworks since the book was originally published, so updated R code is also provided to demonstrate alternative, more modern techniques.\
+Much has changed with both R and the time series frameworks since the book was originally published, so updated R code is also provided to demonstrate alternative, more modern techniques.
+
+Reference: [Forecasting: Principles and Practice](https://otexts.com/fpp3/) (*Rob J Hyndman and George Athanasopoulos*)\
 
 # Chapter 2 - Time Series Date
 
 {{< include code/PTFS_ch02.qmd >}}
 
-## Updated code using `tidyverse` and introduce `plotly` for interactivity
+## Interactive Data Visualizations
 
 {{< include code/PTFS_ch02_addendum.qmd >}}
 
