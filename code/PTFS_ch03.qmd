@@ -62,6 +62,47 @@ amtrak_ts_annotations(2500)
 
 ```
 
+### Updated Section 3.1 Figures
+
+```{r}
+ridership <- read_excel(here::here("data", "Amtrak data.xls"), 
+    col_types = c("date", "numeric")) %>% 
+  mutate(Month = yearmonth(Month)) %>% 
+  as_tsibble(index = Month)
+
+ridership_h <- ridership %>% 
+  append_row(n = 21)
+
+ridership_annotation <- function(plt, y = 2500) {
+  y_txt <- y + 100
+  y_arrow <- y
+    
+  plt +
+    # vertical lines for partions
+    geom_vline(xintercept = ymd('2001 Apr 01')) +
+    geom_vline(xintercept = ymd('2004 Apr 01')) +
+    
+    # partition arrows
+    annotate("line", 
+             x = yearmonth('1997 Jan'), y = y_arrow,
+             xend = yearmonth('1999 Apr', yend = y_arrow)) +
+    annotate("line", 
+             x = ymd('1997 Jan 01'), y = y_arrow,
+             xend = ymd('1999 Apr 01', yend = y_arrow)) +
+    
+    
+    # partition labels
+    annotate("text", x = ymd('1999 Apr 01'), y = y_txt, label = 'Training') +
+    annotate("text", x = ymd('2002 Oct 01'), y = y_txt, label = 'Validation') +
+    annotate("text", x = ymd('2005 Apr 01'), y = y_txt, label = 'Future') +
+    
+    theme_minimal()
+}
+ridership_h %>% 
+  autoplot(Ridership)  %>% 
+  ridership_annotation()
+```
+
 ## 3.3 Measuring Predictive Accuracy
 
 ### Table 3.1
