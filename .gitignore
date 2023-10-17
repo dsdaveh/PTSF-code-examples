@@ -6,4 +6,8 @@
 *.html
 */PTFS_*_files/*
 Practical*_files/*
+
+#linked files
 code/rsconnect*
+code/data
+code/image
