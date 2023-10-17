@@ -114,9 +114,10 @@ ridership_h %>%
   # autolayer(ridership_fit, level = NULL)  
   # use ggplot functions to better match the original figure from the book
   geom_line(data = ridership_fit,
-            aes(y = .mean, color = is_training))  +
-  scale_color_manual(values = c("TRUE" = "black", "FALSE" = "blue")) +
-  guides(color = FALSE) 
+            aes(y = .mean, color = is_training, linetype = is_training))  +
+  scale_color_manual(values = c("TRUE" = "black", "FALSE" = "skyblue")) +
+  scale_linetype_manual(values = c("TRUE" = "solid", "FALSE" = "dashed")) +
+  guides(color = FALSE, linetype = FALSE) 
 ```
 
 
