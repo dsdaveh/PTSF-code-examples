@@ -14,13 +14,14 @@ amtrak_ts_annotations <- function(y=2500, y_pad = 50) {
 arrow_look <- function() arrow(ends = "both", length = unit(.3, "cm"))
 
 #create a function to annotate the ridership plot
-ridership_annotation <- function(plt, y = 2500) {
+ridership_annotation <- function(plt, y = 2500,
+                                 trn_month = yearmonth('2001 Apr'),
+                                 val_month = yearmonth('2004 Apr')) {
   y_txt <- y + 75
   y_arrow <- y
   
-  #TODO ask for these as inputs
-  tv_date <- yearmonth('2001 Apr') |> as.Date()
-  vf_date <- yearmonth('2004 Apr') |> as.Date()
+  tv_date <- trn_month |> as.Date()
+  vf_date <- val_month |> as.Date()
   
   #get the minimum and maximum values of the x date from the plt object 
   min_date <- min(plt$data$Month) |> as.Date()
