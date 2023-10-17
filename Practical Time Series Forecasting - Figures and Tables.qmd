@@ -8,12 +8,10 @@ resource_files:
 - data/*
 - code/*
 - image/*
+execute:
+  echo: true
+  warning: false
 ---
-
-```{r}
-#| echo: false
-library(rmarkdown)
-```
 
 # Introduction
 
