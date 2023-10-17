@@ -10,6 +10,9 @@ amtrak_ts_annotations <- function(y=2500, y_pad = 50) {
 }
 
 #ggplot2 version
+
+arrow_look <- function() arrow(ends = "both", length = unit(.3, "cm"))
+
 #create a function to annotate the ridership plot
 ridership_annotation <- function(plt, y = 2500) {
   y_txt <- y + 75
@@ -34,13 +37,13 @@ ridership_annotation <- function(plt, y = 2500) {
     annotate("text", x = ymd('2005 Apr 01'), y = y_txt, label = 'Future') +
     
     #add arrows for partitions
-    annotate("segment", arrow = arrow(ends = "both"),
+    annotate("segment", arrow = arrow_look(),
              x = min_date + days(30), y = y_arrow, 
              xend = tv_date - days(30), yend = y_arrow) +
-    annotate("segment", arrow = arrow(ends = "both"),
+    annotate("segment", arrow = arrow_look(),
              x = tv_date + days(30), y = y_arrow,
              xend = vf_date - days(30), yend = y_arrow) +
-    annotate("segment", arrow = arrow(ends = "both"),
+    annotate("segment", arrow = arrow_look(),
              x = vf_date + days(30), y = y_arrow,
              xend = max_date - days(30), yend = y_arrow) +
     theme_minimal()

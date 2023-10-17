@@ -14,6 +14,8 @@ Scripts adapted from [Practical Time Series Forecasting - Datasets & R Code](htt
 ### Figure 3.1
 
 ```{r}
+#| message: false
+#| warning: false
 library(forecast)
 
 amtrak_csv <- here::here("data", "Amtrak data.csv")
@@ -71,8 +73,8 @@ ridership_annotation
 ```
 
 ```{r}
-#| warning = false
-#| 
+#| warning: false
+#| message: false
 library(fpp3)
 library(readxl)
 
@@ -100,7 +102,7 @@ head(table_3_1, 3)
 message('...')
 tail(table_3_1, 1)
 
-accuracy(ridership.lm.pred$mean, valid.ts)
+forecast::accuracy(ridership.lm.pred$mean, valid.ts)
 ```
 
 ## 3.4 Evaluating Forecast Uncertainty
@@ -226,7 +228,7 @@ naive.pred <- naive(train.ts, h = fixed.nValid)
 snaive.pred <- snaive(train.ts, h = fixed.nValid)
 # accuracy(naive.pred, valid.ts)
 # accuracy(snaive.pred, valid.ts)
-naive_acc <- accuracy(naive.pred, valid.ts)
+naive_acc <- forecast::accuracy(naive.pred, valid.ts)
 
 method_desc <- sprintf('Rolling Forward %d-months ahead', 1:length(mae))
 table_3_3 <- tibble(Method = method_desc, MAE = mae, RMSE = rmse, MAPE = mape) %>% bind_rows(tibble(Method = 'Roll Forward Overall',
@@ -270,7 +272,7 @@ table_3_4_disp
 
 ```{r}
 snaive.pred <- snaive(train.ts, h = fixed.nValid)
-snaive_acc <- accuracy(snaive.pred, valid.ts)
+snaive_acc <- forecast::accuracy(snaive.pred, valid.ts)
 
 table_3_5 <-  bind_rows(
   tibble(Method = 'Fixed Partition Overall',
