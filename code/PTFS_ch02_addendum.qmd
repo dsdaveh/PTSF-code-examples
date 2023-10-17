@@ -26,6 +26,7 @@ tt_raw_plt <- TunnelTraffic %>%
 ggplotly(tt_raw_plt)
 ```
 
+This plot doesn't match the one in the textbook, but I've chosen it because it is also effective for comparing the annual traffic volumes, and is easy to produce using the `gg_season` function from the fpp3 library. The text bookplot can be reproduced using standard ggplot2 functions (with `facet_wrap()`).
 ```{r}
 monthly_traffic <- TunnelTraffic %>% 
   mutate(Month = yearmonth(Day)) %>% 
@@ -41,8 +42,6 @@ traffic_plt <- monthly_traffic %>%
 ggplotly(traffic_plt)
 ```
 
-\
-\
 
 ```{r}
 tt_wday_plt <- TunnelTraffic %>% 
