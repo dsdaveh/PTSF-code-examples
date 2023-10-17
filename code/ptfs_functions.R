@@ -8,3 +8,40 @@ amtrak_ts_annotations <- function(y=2500, y_pad = 50) {
   arrows(2004.5 - 3, y - y_pad, 2004, y - y_pad, code = 3, length = 0.1, lwd = 1,angle = 30)
   arrows(2004.5, y - y_pad, 2006, y - y_pad, code = 3, length = 0.1, lwd = 1, angle = 30)
 }
+
+#ggplot2 version
+#create a function to annotate the ridership plot
+ridership_annotation <- function(plt, y = 2500) {
+  y_txt <- y + 75
+  y_arrow <- y
+  
+  #TODO ask for these as inputs
+  tv_date <- yearmonth('2001 Apr') |> as.Date()
+  vf_date <- yearmonth('2004 Apr') |> as.Date()
+  
+  #get the minimum and maximum values of the x date from the plt object 
+  min_date <- min(plt$data$Month) |> as.Date()
+  max_date <- max(plt$data$Month) |> as.Date()
+  
+  plt +
+    #add vertical lines for partions
+    geom_vline(xintercept = tv_date ) +
+    geom_vline(xintercept = vf_date |> as.Date()) +
+    
+    #add labels for partitions
+    annotate("text", x = ymd('1999 Apr 01'), y = y_txt, label = 'Training') +
+    annotate("text", x = ymd('2002 Oct 01'), y = y_txt, label = 'Validation') +
+    annotate("text", x = ymd('2005 Apr 01'), y = y_txt, label = 'Future') +
+    
+    #add arrows for partitions
+    annotate("segment", arrow = arrow(ends = "both"),
+             x = min_date + days(30), y = y_arrow, 
+             xend = tv_date - days(30), yend = y_arrow) +
+    annotate("segment", arrow = arrow(ends = "both"),
+             x = tv_date + days(30), y = y_arrow,
+             xend = vf_date - days(30), yend = y_arrow) +
+    annotate("segment", arrow = arrow(ends = "both"),
+             x = vf_date + days(30), y = y_arrow,
+             xend = max_date - days(30), yend = y_arrow) +
+    theme_minimal()
+}
