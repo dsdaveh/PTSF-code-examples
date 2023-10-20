@@ -34,12 +34,14 @@ arrows(2004 - 3,2450,1991.25,2450,code=3,length=0.1,lwd=1,angle=30)
 arrows(2004.5 - 3,2450,2004,2450,code=3,length=0.1,lwd=1,angle=30)
 arrows(2004.5,2450,2006,2450,code=3,length=0.1,lwd=1,angle=30)
 ```
+
 Since the textbook omits the annotation in it's examples beyond Figure 3.1 for clarity, there is a mismatch between the code and the graphics output. We'll create a simple function t add the annotation to subsequent plots to keep the examples minimal. Here is Figure 3.1 reproduced with the annotation function.
 
 ```{r}
 source(here::here('code', 'ptfs_functions.R'))
 amtrak_ts_annotations
 ```
+
 ### Updated Figure 3.1
 
 Updating the code using the `tidyverse` and `tidyverts` frameworks requires an updated annotation function:
@@ -67,7 +69,6 @@ ridership_h %>%
   ridership_annotation()
 ```
 
-
 ### Figure 3.2
 
 ```{r}
@@ -88,6 +89,7 @@ amtrak_ts_annotations(2500)
 
 
 ```
+
 ### Updated Figure 3.2
 
 ```{r}
@@ -97,7 +99,7 @@ ridership_trn <- ridership_h %>%
   filter_index("1991 Jan" ~ "2001 Mar")
 
 ridership_val <- ridership_h %>% 
-  filter_index("2001 Apr" ~ "2004 Apr")
+  filter_index("2001 Apr" ~ "2004 Mar")
 
 # Fit the model
 ridership_tslm <- ridership_trn %>% 
@@ -117,9 +119,8 @@ ridership_h %>%
             aes(y = .mean, color = is_training, linetype = is_training))  +
   scale_color_manual(values = c("TRUE" = "black", "FALSE" = "skyblue")) +
   scale_linetype_manual(values = c("TRUE" = "solid", "FALSE" = "dashed")) +
-  guides(color = FALSE, linetype = FALSE) 
+  guides(color = "none", linetype = "none") 
 ```
-
 
 ## 3.3 Measuring Predictive Accuracy
 
@@ -135,7 +136,19 @@ tail(table_3_1, 1)
 forecast::accuracy(ridership.lm.pred$mean, valid.ts)
 ```
 
-## 3.4 Evaluating Forecast Uncertainty
+### Updated Table 3.1
+
+```{r}
+ridership_fc <- ridership_tslm %>% 
+  forecast(h = "3 years") 
+
+bind_rows(ridership_fc |> head(3),
+          ridership_fc |> tail(1))
+
+# forecast accuracy for the validation period
+ridership_fc |> 
+  accuracy(ridership_val)
+```
 
 ### Figure 3.3
 
@@ -147,10 +160,20 @@ lines(valid.ts - ridership.lm.pred$mean, lwd = 1)
 
 amtrak_ts_annotations(500)
 ```
+### Figure 3.4
 
 ```{r}
 # Figure 3-4
 hist(ridership.lm.pred$residuals,  ylab = "Frequency", xlab = "Forecast Error", bty = "l", main = "")
+```
+
+### Updated Figures 3.3 & 3.4
+
+Rather than reproduce the textbook figures, we'll use the `gg_tsresiduals()` function from the `fabletools` package to more easily create a common visualization of the residuals.
+
+```{r}
+ridership_tslm  |> 
+  gg_tsresiduals()
 ```
 
 ### Figure 3.5
