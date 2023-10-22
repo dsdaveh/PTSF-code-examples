@@ -160,6 +160,7 @@ lines(valid.ts - ridership.lm.pred$mean, lwd = 1)
 
 amtrak_ts_annotations(500)
 ```
+
 ### Figure 3.4
 
 ```{r}
@@ -194,6 +195,14 @@ lines(valid.ts)
 amtrak_ts_annotations(2500)
 ```
 
+### Updated Figure 3.5
+
+```{r}
+ridership_fc |> 
+  autoplot(ridership_h) |> 
+  ridership_annotation()
+```
+
 ## 3.5 Advanced Data Partitioning: Roll-Forward Validation
 
 ### Figure 3.6
@@ -224,6 +233,41 @@ plot(people.ets.MMdN.pred, xlab = "Month", ylab="People (in millions)", ylim = c
 # Examine the lower and upper limits of the MMN model's prediction cones.
 # people.ets.MMN.pred$lower %>% head()
 # people.ets.MMN.pred$upper %>% tail()
+```
+
+### Updated Figure 3.6
+
+
+
+NOTE:
+
+This updated code uncovers a few issues with the `fable` package at the time of this run. 1. The `forecast.ETS()` function is slower than the `forecast.ets()` function for Multiplicative models. This chunck takes about 200 seconds on a MacBook Pro. 2. The level argument is not working (is ignored) for the `forecast.ETS()` function. 3. autoplot doesn't display the prediction intervals if they exceed the plot y-axis limits.
+
+```{r}
+tumblr_people <- tumblr.data |> 
+  transmute(id = row_number(),
+         people = People.Worldwide / 1e6) |> 
+  as_tsibble(index = id)
+
+#fit 3 ETS models to the data [AAN, MMN, MMdN]
+tumblr_ets <- tumblr_people |> 
+  model(ets_ann = ETS(people ~ error('A') + trend('A') + season('N')),
+        ets_mmn = ETS(people ~ error('M') + trend('M') + season('N')),
+        ets_mmdn = ETS(people ~ error('M') + trend('Md') + season('N')))
+
+#forecast 115 months into the future
+library(tictoc)
+tic()
+tumblr_fc <- tumblr_ets |> 
+  forecast(h = 115, level = c(0.2, 0.4, 0.6, 0.8))
+tcapture <- toc()
+
+autoplot(tumblr_fc, tumblr_people) +
+    facet_grid(. ~ .model) +
+  ylim(-100, 1000) +
+  guides(colour = 'none', fill = 'none') +
+  scale_color_manual(values = rep('blue', 3)) +
+  scale_fill_manual(values = rep('blue', 3))
 ```
 
 ### Figure 3.7
