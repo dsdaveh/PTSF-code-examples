@@ -237,13 +237,13 @@ plot(people.ets.MMdN.pred, xlab = "Month", ylab="People (in millions)", ylim = c
 
 ### Updated Figure 3.6
 
-
-
 NOTE:
 
 This updated code uncovers a few issues with the `fable` package at the time of this run. 1. The `forecast.ETS()` function is slower than the `forecast.ets()` function for Multiplicative models. This chunck takes about 200 seconds on a MacBook Pro. 2. The level argument is not working (is ignored) for the `forecast.ETS()` function. 3. autoplot doesn't display the prediction intervals if they exceed the plot y-axis limits.
 
 ```{r}
+#| cache: true
+
 tumblr_people <- tumblr.data |> 
   transmute(id = row_number(),
          people = People.Worldwide / 1e6) |> 
@@ -284,10 +284,46 @@ naive.roll <- ts(Amtrak.data$Ridership[fixed.nTrain:(fixed.nTrain + fixed.nValid
 plot(train.ts, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "")
 axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
 lines(naive.fixed$mean, lwd = 2, col = "blue", lty = 2)
-lines(naive.roll, lwd = 2, col = "blue", lty = 2)
+lines(naive.roll, lwd = 2, col = "purple", lty = 2)
 lines(valid.ts)
 
 amtrak_ts_annotations()
+```
+
+### Updated Figure 3.7
+
+```{r}
+# create a rolling forecast with the naive method
+ridership_roll_naive <- ridership |> 
+  filter_index('2001 Mar' ~ '2004 Mar') |>  # only need the last point for naive forecast
+  stretch_tsibble(.init = 1, .step = 1) |> 
+  filter(.id != max(.id)) |>
+  model(naive = NAIVE(Ridership)) |> 
+  augment()
+```
+
+```{r}
+# create a rolling forecast with the naive method
+ridership_naive_roll <- ridership |> 
+  filter_index('2001 Mar' ~ '2004 Mar') |>  # only need the last point for naive forecast
+  model(naive = NAIVE(Ridership)) |> 
+  augment()
+
+# create a rolling forecast with the fixed method
+ridership_naive_fixed <- ridership_trn |> 
+  model(naive = NAIVE(Ridership)) 
+
+ridership_naive_fixed_fc <- ridership_naive_fixed |> 
+  forecast(h = 36)
+
+autoplot(ridership_naive_fixed_fc, level = NULL)
+
+autoplot(ridership_h) |>  
+  ridership_annotation() +
+  autolayer(ridership_naive_roll, .vars = .fitted, color = 'blue', linetype = 'dashed')  +
+  autolayer(ridership_naive_fixed_fc, level = NULL, color = 'purple', linetype = 'dashed') 
+  
+
 ```
 
 ### Table 3.3
