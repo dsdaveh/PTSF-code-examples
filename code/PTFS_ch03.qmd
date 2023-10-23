@@ -149,15 +149,6 @@ bind_rows(ridership_fc |> head(3),
 ridership_fc |> 
   accuracy(ridership_val)
 ```
-[ISSUE] This code is not rendering inside the Quarto main document, but does run in the child file.
-```
-ridership_fc |> 
-   accuracy(ridership_val)
-```
-
-
-```{r}
-```
 
 ### Figure 3.3
 

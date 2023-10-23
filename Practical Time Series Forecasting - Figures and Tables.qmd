@@ -21,6 +21,12 @@ Much has changed with both R and the time series frameworks since the book was o
 
 Reference: [Forecasting: Principles and Practice](https://otexts.com/fpp3/) (*Rob J Hyndman and George Athanasopoulos*)\
 
+```{r}
+#load fpp3 after forecast to prevent masking fabletools::accuracy()
+library(forecast)
+library(fpp3)
+```
+
 # Chapter 2 - Time Series Date
 
 {{< include code/PTFS_ch02.qmd >}}
