@@ -11,3 +11,7 @@ Practical*_files/*
 code/rsconnect*
 code/data
 code/image
+
+*_cache/*
+code/*_cache/*
+*dbg*
