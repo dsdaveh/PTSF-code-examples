@@ -430,7 +430,7 @@ table_3_5 <-  bind_rows(
 table_3_5
 ```
 
-### Table 3.5
+### Table 3.6
 
 ```{r}
 fixed.nValid <- 36
