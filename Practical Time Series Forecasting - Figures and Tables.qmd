@@ -21,6 +21,10 @@ Much has changed with both R and the time series frameworks since the book was o
 
 Reference: [Forecasting: Principles and Practice](https://otexts.com/fpp3/) (*Rob J Hyndman and George Athanasopoulos*)\
 
+Code: <https://github.com/dsdaveh/PTSF-code-examples.git>
+
+Document: <https://first-day.quarto.pub/practical-time-series-forecasting--figures-and-tables/>
+
 ```{r}
 #load fpp3 after forecast to prevent masking fabletools::accuracy()
 library(forecast)
