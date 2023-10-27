@@ -216,6 +216,7 @@ ridership_diffs_fc %>%
   geom_line(data =  augment(ridership_diffs_fit) , aes(y = .fitted), color = "blue") 
 ```
 
+### Table 5.1
 ```{r}
 # Table 5.1
 ses.opt <- ets(train.ts, model = "ANN")
@@ -225,6 +226,31 @@ forecast::accuracy(ses.pred, valid.ts)
 forecast::accuracy(ses.opt.pred, valid.ts)
 
 ```
+### Updated Table 5.1
+
+```{r}
+ridership_diffs_fit <- ridership_diffs_trn |> 
+  model(
+    ses = ETS(`Twice-Differenced (Lag-12, Lag-1)` ~ 
+                 error('A') + trend('N', alpha = 0.2) + season('N')),
+   ses_opt = ETS(`Twice-Differenced (Lag-12, Lag-1)` ~ 
+                error('A') + trend('N') + season('N'))
+  ) 
+
+
+ridership_diffs_fc <- ridership_diffs_fit %>% 
+  forecast(h = 36) 
+
+
+ridership_diffs_fit["ses_opt"] |> report()
+
+bind_rows(
+  accuracy(ridership_diffs_fit),
+  accuracy(ridership_diffs_fc, ridership_diffs)
+) |> gt::gt()
+
+```
+
 
 ```{r}
 # Miscellaneous calculations below.
