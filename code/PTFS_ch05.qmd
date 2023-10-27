@@ -35,7 +35,50 @@ legend(1994,2200, c("Ridership","Centered Moving Average", "Trailing Moving Aver
 
 ```
 
-## Amtrak Fig 5-3.R
+### Updated Figure 5.2
+
+```{r upd_reload_data}
+#| warning: false
+#| message: false
+library(fpp3)
+library(readxl)
+
+ridership <- read_excel(here::here("data", "Amtrak data.xls"), 
+    col_types = c("date", "numeric")) %>% 
+  mutate(Month = yearmonth(Month)) %>% 
+  as_tsibble(index = Month)
+```
+
+```{r upd_5-2}
+library(slider)
+
+# Create centered 12-month moving average
+centered_ma <- ridership$Ridership %>%
+  slide_dbl(.f = ~ mean(.x), .before = 6, .after = 6, .complete = TRUE)
+
+# Create trailing 12-month moving average
+trailing_ma <- ridership$Ridership %>%
+  slide_dbl(.f = ~ mean(.x), .before = 11, .after = 0, .complete = TRUE)
+
+# Add to the original tsibble
+ridership_ma <- ridership %>%
+  mutate(centered_ma = centered_ma,
+         trailing_ma = trailing_ma)
+
+# Plot
+ggplot(data = ridership_ma, aes(x = Month)) +
+  geom_line(aes(y = Ridership, linetype = "Actual")) +
+  geom_line(aes(y = centered_ma, linetype = "Centered MA")) +
+  geom_line(aes(y = trailing_ma, linetype = "Trailing MA")) +
+  labs(title = "Monthly Amtrak Ridership with Moving Averages",
+       y = "Ridership",
+       linetype = "") +
+  theme_minimal() +
+  theme(legend.position = "top") 
+
+```
+
+### Amtrak Fig 5-3.R
 
 ```{r}
 source(here::here('code', 'ptfs_functions.R'))
@@ -58,6 +101,27 @@ lines(valid.ts)
 amtrak_ts_annotations(2500)
 ```
 
+### Updated Figure 5.3
+
+```{r}
+ridership_ma_trn <- ridership_ma %>% 
+  filter_index("1991 Jan" ~ "2001 Mar")
+
+ridership_ma_fit <- ridership_ma_trn |> 
+  model(
+    naive = NAIVE(trailing_ma)
+  ) 
+
+ridership_ma_fc <- ridership_ma_fit %>% 
+  forecast(h = 36) 
+
+ridership_ma_fc %>%
+  autoplot(ridership_ma_trn |> append_row(36 + 21), level = NULL, linetype = "longdash") |> 
+  ridership_annotation() +
+  geom_line(data =  ridership , aes(y = Ridership), color = "grey50") 
+  
+```
+
 ## 5.3 Differencing
 
 ### Amtrak Fig 5-4.R
@@ -70,6 +134,40 @@ plot(diff(ridership.ts, lag = 12), ylab = "Lag-12", xlab = "Time", bty = "l", xl
 plot(diff(ridership.ts, lag = 1), ylab = "Lag-1", xlab = "Time", bty = "l", xlim = c(1991,2004.25), main = "Lag-1 Difference")
 plot(diff(diff(ridership.ts, lag = 12), lag = 1), ylab = "Lag-12, then Lag-1", xlab = "Time", bty = "l", xlim = c(1991,2004.25), main = "Twice-Differenced (Lag-12, Lag-1)")
 ```
+
+### Updated  Fig 5.4
+
+
+
+```{r}
+ridership_diffs <- ridership |> 
+  mutate(
+    `Lag-1 Difference` = Ridership |> difference(lag = 1),
+    `Lag-12 Difference` = Ridership |> difference(lag = 12),
+    `Twice-Differenced (Lag-12, Lag-1)` = Ridership |> 
+      difference(lag = 1) |> 
+      difference(lag = 12)
+  ) 
+
+ridership_diffs |>
+  pivot_longer(
+    cols = c(Ridership, contains("Lag")),
+    #cols = contains("Lag"),
+    names_to = "Difference",
+    values_to = "counts"
+  ) |> 
+  #reorder the facet levels
+  mutate(Difference = factor(Difference, levels = c(
+    "Ridership", 
+    "Lag-12 Difference", 
+    "Lag-1 Difference",
+    "Twice-Differenced (Lag-12, Lag-1)"))) |> 
+  ggplot(aes(x = Month, y = counts)) +
+  geom_line() +
+  facet_wrap(~Difference, scales = "free_y")  +
+  labs(y = 'Ridership')
+```
+
 
 ```{r}
 ridership.deseasonalized <- diff(ridership.ts, lag = 12)
