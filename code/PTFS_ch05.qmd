@@ -169,11 +169,6 @@ ridership_diffs |>
 ```
 
 
-```{r}
-ridership.deseasonalized <- diff(ridership.ts, lag = 12)
-summary(tslm(ridership.deseasonalized ~ trend))
-```
-
 ## 5.5 Advance Exponential Smoothing
 
 ### Amtrak Fig 5-5
@@ -198,7 +193,28 @@ amtrak_ts_annotations(275, 30)
 
 ```
 
-### Table 5.1
+### Updated Figure 5.5
+
+
+```{r}
+ridership_diffs_trn <- ridership_diffs %>% 
+  filter_index("1992 Feb" ~ "2001 Mar")
+
+ridership_diffs_fit <- ridership_diffs_trn |> 
+  model(
+    ses = ETS(`Twice-Differenced (Lag-12, Lag-1)` ~ 
+                error('A') + trend('N', alpha = 0.2) + season('N'))
+  ) 
+
+
+ridership_diffs_fc <- ridership_diffs_fit %>% 
+  forecast(h = 36) 
+
+ridership_diffs_fc %>%
+  autoplot(ridership_diffs |> append_row(21), level = NULL, linetype = "longdash") |> 
+  ridership_annotation(y = 275) +
+  geom_line(data =  augment(ridership_diffs_fit) , aes(y = .fitted), color = "blue") 
+```
 
 ```{r}
 # Table 5.1
