@@ -135,9 +135,7 @@ plot(diff(ridership.ts, lag = 1), ylab = "Lag-1", xlab = "Time", bty = "l", xlim
 plot(diff(diff(ridership.ts, lag = 12), lag = 1), ylab = "Lag-12, then Lag-1", xlab = "Time", bty = "l", xlim = c(1991,2004.25), main = "Twice-Differenced (Lag-12, Lag-1)")
 ```
 
-### Updated  Fig 5.4
-
-
+### Updated Fig 5.4
 
 ```{r}
 ridership_diffs <- ridership |> 
@@ -168,7 +166,6 @@ ridership_diffs |>
   labs(y = 'Ridership')
 ```
 
-
 ## 5.5 Advance Exponential Smoothing
 
 ### Amtrak Fig 5-5
@@ -195,7 +192,6 @@ amtrak_ts_annotations(275, 30)
 
 ### Updated Figure 5.5
 
-
 ```{r}
 ridership_diffs_trn <- ridership_diffs %>% 
   filter_index("1992 Feb" ~ "2001 Mar")
@@ -218,6 +214,7 @@ ridership_diffs_fc %>%
 ```
 
 ### Table 5.1
+
 ```{r}
 # Table 5.1
 ses.opt <- ets(train.ts, model = "ANN")
@@ -227,6 +224,7 @@ forecast::accuracy(ses.pred, valid.ts)
 forecast::accuracy(ses.opt.pred, valid.ts)
 
 ```
+
 ### Updated Table 5.1
 
 ```{r}
@@ -252,9 +250,6 @@ bind_rows(
 
 ```
 
-
-
-
 ### Figure 5.6
 
 ```{r}
@@ -276,7 +271,9 @@ lines(valid.ts)
 
 amtrak_ts_annotations()
 ```
+
 ### Updated Figure 5.6
+
 ```{r}
 ridership_trn <- ridership %>% 
   filter_index("1992 Feb" ~ "2001 Mar")
@@ -334,24 +331,29 @@ ets.opt
 ```{r}
 ridership_opt_fit <- ridership_trn |> 
   model(
-    opt = ETS(Ridership ~ 
-                error('M') + trend('A') + season('A'))
+    opt = ETS(Ridership, restrict = FALSE, opt_crit = "mse")
   ) 
-
-ridership_opt_fit <- ridership_trn |> 
-  model(
-    opt = ETS(Ridership, restrict = FALSE)
-  ) 
-
 
 ridership_opt_fit |>  report()
 
 ```
 
+This isn't a figure in the book, but since the two R libraries are producing slightly different results, its worthwhile to plot them to se the differences.
 
 ```{r}
-ets.opt.pred <- forecast(ets.opt, h = nValid, level = 0)
-plot(ets.opt.pred)
+ridership_etsbase_opt <- tsibble(
+  Month = yearmonth('2001 Mar') + 1:36,
+  Ridership = ets.opt.pred[["mean"]],
+  index = Month)
+
+ridership_opt_fc <- ridership_opt_fit |> 
+  forecast(h = "3 years")
+
+ridership_opt_fc |> 
+  autoplot(level = NULL, color = "blue") +
+  autolayer(ridership_etsbase_opt, .vars = Ridership, color = "red") +
+  geom_line(data = ridership, aes(y = Ridership), alpha = 0.5)
+   
 ```
 
 ### Table 5.5
@@ -360,6 +362,17 @@ plot(ets.opt.pred)
 # Table 5.5
 forecast::accuracy(hwin.pred, valid.ts)
 forecast::accuracy(ets.opt.pred, valid.ts)
+```
+
+### Updated Table 5.5
+
+```{r}
+bind_rows(
+  accuracy(ridership_hw_fit),
+  accuracy(ridership_hw_fc, ridership),
+  accuracy(ridership_opt_fit),
+  accuracy(ridership_opt_fc, ridership)
+) |> gt::gt()
 ```
 
 ## 5.7 Extensions of Exponential Smoothing
