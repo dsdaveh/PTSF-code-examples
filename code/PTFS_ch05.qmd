@@ -211,7 +211,8 @@ ridership_diffs_fc <- ridership_diffs_fit %>%
   forecast(h = 36) 
 
 ridership_diffs_fc %>%
-  autoplot(ridership_diffs |> append_row(21), level = NULL, linetype = "longdash") |> 
+  autoplot(ridership_diffs |> append_row(21), 
+           level = NULL, linetype = "longdash") |> 
   ridership_annotation(y = 275) +
   geom_line(data =  augment(ridership_diffs_fit) , aes(y = .fitted), color = "blue") 
 ```
@@ -252,25 +253,7 @@ bind_rows(
 ```
 
 
-```{r}
-# Miscellaneous calculations below.
-ar1 <- auto.arima(train.ts)
-ar1
-arima.pred <- forecast(ar1, h = nValid)
 
-diff.once.ts <- diff(ridership.ts, lag = 12)
-diff.df <- data.frame("Time" = as.vector(time(ridership.ts)), "None" = as.vector(ridership.ts), "Once" = c(rep(NA, 12), as.vector(diff.once.ts)), "Twice" = c(rep(NA, 13), as.vector(diff.twice.ts)), "Pred" = c(rep(NA, length(ridership.ts) - nValid), as.vector(ses.pred$mean)))
-
-rts <- window(ridership.ts, start = c(1991, 1), end = c(1991, nTrain))
-rets <- ets(rts)
-rets
-rets.pred <- forecast(rets, h = nValid)
-
-```
-
-```{r}
-plot(rets.pred)
-```
 
 ### Figure 5.6
 
@@ -293,6 +276,26 @@ lines(valid.ts)
 
 amtrak_ts_annotations()
 ```
+### Updated Figure 5.6
+```{r}
+ridership_trn <- ridership %>% 
+  filter_index("1992 Feb" ~ "2001 Mar")
+
+ridership_hw_fit <- ridership_trn |> 
+  model(
+    holts_winter = ETS(Ridership ~ 
+                error('M') + trend('A') + season('A'))
+  ) 
+
+ridership_hw_fc <- ridership_hw_fit %>% 
+  forecast(h = 36) 
+
+ridership_hw_fc %>%
+  autoplot(ridership |> append_row(21), 
+           level = NULL, linetype = "longdash") |> 
+  ridership_annotation() +
+  geom_line(data =  augment(ridership_hw_fit) , aes(y = .fitted), color = "blue") 
+```
 
 ### Table 5.2
 
@@ -305,6 +308,15 @@ hwin$states[nrow(hwin$states), ]  # Final states
 
 ```
 
+### Updated Table 5.2
+
+```{r}
+ridership_hw_fit |> 
+  report()
+```
+
+Note that the paramaters for the Holt-Winters model differ somewhat between `forecast` and `fable` (see [footnote 8-16 of Forecasting: Principles and Practice](https://otexts.com/fpp3/holt-winters.html#holt-winters-1) for more details).
+
 ## 5.6 Summary of Exponential Smoothing in R using `ets`
 
 ### Automatic Model Selection in `ets`
@@ -316,6 +328,26 @@ hwin$states[nrow(hwin$states), ]  # Final states
 ets.opt <- ets(train.ts, restrict = FALSE, allow.multiplicative.trend = TRUE)
 ets.opt
 ```
+
+### Updated Table 5.4
+
+```{r}
+ridership_opt_fit <- ridership_trn |> 
+  model(
+    opt = ETS(Ridership ~ 
+                error('M') + trend('A') + season('A'))
+  ) 
+
+ridership_opt_fit <- ridership_trn |> 
+  model(
+    opt = ETS(Ridership, restrict = FALSE)
+  ) 
+
+
+ridership_opt_fit |>  report()
+
+```
+
 
 ```{r}
 ets.opt.pred <- forecast(ets.opt, h = nValid, level = 0)
