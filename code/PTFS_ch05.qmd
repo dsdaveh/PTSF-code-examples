@@ -400,6 +400,55 @@ lines(bike.hourly.dshw.pred.mean, lwd = 2, col = "blue")
 
 ```
 
+### Updated Figure 5.7
+
+`fable` doesn't have an implementation of `dshw()` so we'll us `prophet` to capture multiple seasonality.
+
+```{r}
+library(fable.prophet)
+bike_hourly <- bike.hourly.df |> 
+  mutate(time = ymd_h(paste(dteday, hr, sep = " "))) |> 
+  select(time, cnt) |> 
+  as_tsibble(index = time)
+
+bike_hourly_trn <- bike_hourly |> 
+  filter(time >= ymd("2012-07-01"),
+         time < ymd("2012-07-22"))
+bike_hourly_val <- bike_hourly |> 
+  filter(time >= ymd("2012-07-22"),
+         time < ymd("2012-08-01"))
+
+bike_fit <- bike_hourly_trn |> 
+  model(
+    prophet = prophet(log(cnt) ~ season("day") + season("week"))
+  )
+
+bike_fc <- bike_fit |> 
+  forecast(h = "10 days")
+
+autoplot(bike_fc, level = NULL) +
+  autolayer(bike_hourly_trn, .vars = cnt) +
+  geom_line(data= bike_hourly_val, aes(y = cnt), alpha = 0.2) +
+  labs(title = "Hourly Bike Sharing Rentals",
+       subtitle = "Prophet Forecast",
+       y = "Count",
+       x = "") +
+  theme_minimal()
+```
+
+Compare the two methods
+
+```{r}
+bind_rows(
+  forecast::accuracy(bike.hourly.dshw.pred.mean, yValid.msts) |> 
+    as_tibble() |> 
+    mutate(.model = 'dshw', .type = "Test") ,
+  accuracy(bike_fc, bike_hourly)
+) |> 
+  relocate(.model, .type) |> 
+  gt::gt()
+```
+
 ```{r}
 #| cache: true
 #| 
