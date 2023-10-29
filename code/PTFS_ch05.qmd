@@ -420,7 +420,7 @@ bike_hourly_val <- bike_hourly |>
 
 bike_fit <- bike_hourly_trn |> 
   model(
-    prophet = prophet(log(cnt) ~ season("day") + season("week"))
+    prophet = prophet(log(cnt) ~ growth() + season("day") + season("week"))
   )
 
 bike_fc <- bike_fit |> 
@@ -449,28 +449,6 @@ bind_rows(
   gt::gt()
 ```
 
-```{r}
-#| cache: true
-#| 
-# Compare to stlm and tbats.
-bike.hourly.stlm <- stlm(yTrain.msts, lambda = 0)
-bike.hourly.stlm.pred <- forecast(bike.hourly.stlm, h = nValid)
-bike.hourly.tbats <- tbats(yTrain.msts)
-bike.hourly.tbats.pred <- forecast(bike.hourly.tbats, h = nValid) 
-```
-
-```{r}
-#| fig-height: 8
-#| cache: true
-
-#par(mfrow = c(1, 3))
-par(mfrow = c(3, 1))
-plot(yTrain.msts, xlim = c(0,4 + 3/7), ylab = "Hourly Bike Rentals", ylim = c(0, 1000))
-lines(bike.hourly.dshw.pred.mean, lwd = 2, col = "blue")
-plot(bike.hourly.stlm.pred, ylim = c(0, 1000))
-plot(bike.hourly.tbats.pred, ylim = c(0, 1000))
-```
-
 ### Figure 5.8
 
 ```{r}
@@ -495,3 +473,7 @@ plot(bike.daily.stlm.pred, ylim = c(0, 9000), xlab = "Year", ylab = "Daily Bike 
 ```
 
 Note ... this code for `stlm` doesn't appear to be adding the `Level` back to the forecast appropriately.
+
+`tbats()` and `stlm()` are not available via feasts, so no update is provided here.
+
+### 
