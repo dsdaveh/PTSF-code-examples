@@ -341,6 +341,7 @@ ridership_opt_fit |>  report()
 This isn't a figure in the book, but since the two R libraries are producing slightly different results, its worthwhile to plot them to se the differences.
 
 ```{r}
+ets.opt.pred <- forecast(ets.opt, h = nValid, level = 0)
 ridership_etsbase_opt <- tsibble(
   Month = yearmonth('2001 Mar') + 1:36,
   Ridership = ets.opt.pred[["mean"]],
