@@ -27,5 +27,6 @@ install.packages('here')
 install.packages('caret')
 install.packages('fpp3')
 install.packages('tictoc')
-
+install.packages('gt')
+install.packages('fable.prophet')
 ```
