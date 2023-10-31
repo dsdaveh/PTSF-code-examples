@@ -15,7 +15,7 @@ Scripts adapted from [Practical Time Series Forecasting - Datasets & R Code](htt
 
 ### Figure 6.2
 
-```{r}
+```{r fig6_2}
 source(here::here('code', 'ptfs_functions.R'))
 
 #| message: false
@@ -39,7 +39,7 @@ lines(train.lm$fitted, lwd = 2)
 ```
 
 ### Update Figure 6.2
-```{r upd_reload_data}
+```{r upd_reload_data_ch6}
 #| warning: false
 #| message: false
 library(fpp3)
@@ -51,7 +51,7 @@ ridership <- read_excel(here::here("data", "Amtrak data.xls"),
   as_tsibble(index = Month)
 ```
 
-```{r}
+```{r fig6_2-upd}
 ridership_trn <- ridership %>% 
   filter_index("1991 Jan" ~ "2001 Mar")
 
@@ -71,7 +71,7 @@ ridership_tslm_fit |>
 
 ### Figure 6.3
 
-```{r}
+```{r fig6_3}
 train.lm.pred <- forecast(train.lm, h = nValid, level = 0)
 plot(train.lm.pred, ylim = c(1300, 2600),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
 axis(1, at = seq(1991, 2006, 1), labels = format(seq(1991, 2006, 1)))
@@ -81,7 +81,7 @@ amtrak_ts_annotations(2500)
 ```
 
 ### Update Figure 6.3
-```{r}
+```{r fig6_3-upd}
 ridership_tslm_fc <- ridership_tslm_fit |>
   forecast(h = 36) 
 
@@ -93,20 +93,20 @@ ridership_tslm_fc |>
 
 ### Table 6.1
 
-```{r}
+```{r table6_1}
 # Table 6.1
 summary(train.lm)
 ```
 
 ### Update Table 6.1
-```{r}
+```{r table6_1-upd}
 ridership_tslm_fit |> report()
 ```
 
 
 ### Figure 6.4
 
-```{r}
+```{r fig6_4}
 train.lm.expo.trend <- tslm(train.ts ~ trend, lambda = 0)
 train.lm.expo.trend.pred <- forecast(train.lm.expo.trend, h = nValid, level = 0)
 
@@ -124,18 +124,19 @@ lines(valid.ts)
 amtrak_ts_annotations(2500)
 ```
 
+NOTE: `TLSM()` does not support the lamda argument.  
 
 
 ### Table 6.2
 
-```{r}
+```{r table6_2}
 train.lm.poly.trend <- tslm(train.ts ~ trend + I(trend^2))
 summary(train.lm.poly.trend)
 ```
 
 ### Updated Table 6.2
 
-```{r}
+```{r table6_2-upd}
 ridership_tslm2_fit <- ridership_trn |> 
   model(
     tslm2 = TSLM(Ridership ~ trend() + I(trend()^2))
@@ -148,7 +149,7 @@ ridership_tslm2_fit |> report()
 
 ### Table 6.3
 
-```{r}
+```{r table6_3}
 # Table 6.3
 train.lm.season <- tslm(train.ts ~ season)
 summary(train.lm.season)
@@ -157,7 +158,7 @@ train.lm.season.pred <- forecast(train.lm.season, h = nValid, level = 0)
 
 ### Updated Table 6.3
 
-```{r}
+```{r table6_3-upd}
 ridership_tslm_season_fit <- ridership_trn |> 
   model(
     tslm_season = TSLM(Ridership ~ season())
@@ -170,7 +171,7 @@ ridership_tslm_season_fit |> report()
 
 ### Figure 6.6
 
-```{r}
+```{r fig6_6}
 #| fig-height: 8
 # Figure 6-6
 par(mfrow = c(2,1))
@@ -190,7 +191,7 @@ amtrak_ts_annotations(500)
 
 ### Updated Figure 6.6
 
-```{r}
+```{r fig6_6-upd}
 ridership_tslm_season_fc <- ridership_tslm_season_fit |> 
   forecast(h = 36) 
 
@@ -203,7 +204,7 @@ ridership |>
   labs(y = "Ridership")
 
 ```
-```{r}
+```{r fig6_6-upd2}
 #plot residuals for seasonality model 
 ridership_tslm_season_resid <- ridership_tslm_season_fc |> 
   as_tibble() |>
@@ -225,7 +226,7 @@ ridership_tslm_season_fit |>
 
 ### Table 6.4
 
-```{r}
+```{r table6_4}
 train.lm.trend.season <- tslm(train.ts ~ trend + I(trend^2) + season)
 train.lm.trend.season.pred <- forecast(train.lm.trend.season, h = nValid, level = 0)
 
@@ -235,7 +236,7 @@ summary(train.lm.trend.season)
 
 
 ### Updated Table 6.4
-```{r}
+```{r table6_4-upd}
 ridership_tslm_both_fit <- ridership_trn |> 
   model(
     tslm3 = TSLM(Ridership ~ trend() + I(trend()^2) + season())
@@ -248,7 +249,7 @@ ridership_tslm_both_fit |> report()
 
 ### Figure 6.7
 
-```{r}
+```{r fig6_7}
 # Figure 6-7
 par(mfrow = c(2,1))
 plot(train.lm.trend.season.pred, ylim = c(1300, 2625),  ylab = "Ridership", xlab = "Time", bty = "l", xaxt = "n", xlim = c(1991,2006.25), main = "", flty = 2)
@@ -267,7 +268,7 @@ amtrak_ts_annotations(500)
 
 ### Updated Figure 6.7
 
-```{r}
+```{r fig6_7-upd}
 ridership_tslm_both_fc <- ridership_tslm_both_fit |> 
   forecast(h = 36) 
 
@@ -280,7 +281,7 @@ ridership |>
   labs(y = "Ridership")
 ```
 
-```{r}
+```{r fig6_7-upd2}
 #plot residuals for seasonality model 
 ridership_tslm_both_resid <- ridership_tslm_both_fc |> 
   as_tibble() |>
@@ -298,13 +299,13 @@ ridership_tslm_both_fit |>
 
 At this point we'll depart from our attempts to reproduce the plots from the textbook in favor of some of the out of the box plotting tools from the `tidyverts` packages.
 
-```{r}
+```{r ggresid}
 ridership_tslm_both_fit |> 
   gg_tsresiduals() 
 ```
 Let's also look more generically at how we could run and compare these models more efficiently.
 
-```{r}
+```{r tslm_multi1}
 ridership_tslm_multi_fit <- ridership_trn |> 
   model(
     tslm_ltrend = TSLM(Ridership ~ trend()),
@@ -315,24 +316,16 @@ ridership_tslm_multi_fit <- ridership_trn |>
 
 ridership_tslm_multi_fit |> report()
 ```
-```{r}
+```{r tslm_multi2}
 ridership_tslm_multi_fc <- ridership_tslm_multi_fit |> 
   forecast(h = 36)
 ```
 
 
-```{r}
+```{r tslm_multi3}
 ridership_tslm_multi_fc |> 
   autoplot(level = NULL) +
   autolayer(ridership |> tail(60)) +
   labs(y = "Ridership")
 ```
-
-```{r}
-
-```
-
-```{r}
-```
-
 

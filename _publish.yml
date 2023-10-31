@@ -1,0 +1,4 @@
+- source: Practical Time Series Forecasting - Figures and Tables.qmd
+  quarto-pub:
+    - id: eedf3224-bc53-4094-b7ae-ef4a8de815fb
+      url: 'https://first-day.quarto.pub/practical-time-series-forecasting--figures-and-tables'

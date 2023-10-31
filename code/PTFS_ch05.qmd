@@ -37,7 +37,7 @@ legend(1994,2200, c("Ridership","Centered Moving Average", "Trailing Moving Aver
 
 ### Updated Figure 5.2
 
-```{r upd_reload_data}
+```{r upd_reload_data_ch5}
 #| warning: false
 #| message: false
 library(fpp3)
