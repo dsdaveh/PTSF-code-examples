@@ -51,7 +51,7 @@ ridership <- read_excel(here::here("data", "Amtrak data.xls"),
   as_tsibble(index = Month)
 ```
 
-```{r upd_5-2}
+```{r upd_7-2}
 ridership |> 
   head(24) |> 
   ACF(Ridership, lag_max = 12) |> 
