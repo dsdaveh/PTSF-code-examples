@@ -206,47 +206,30 @@ summary(bike.tslm)
 #| message: false
 bike_ts <- read_csv(bike_daily_csv) %>%
   # Use mutate to create new variables, and use lubridate functions directly
-  mutate(
+    mutate(
     Date = as.Date(dteday, format = "%Y-%m-%d"),
-    Month = factor(month(Date, label = TRUE)),
-    DOW = factor(wday(Date, label = TRUE, week_start = 1)),
+    Month. = factor(
+      month(Date, label = TRUE), ordered = FALSE) |> 
+      relevel(ref = "Dec"),  
+    DOW. = factor(
+      wday(Date, label = TRUE), ordered = FALSE) |> 
+      relevel(ref = "Sat"),  
     WorkingDay = factor(workingday, levels = c(0, 1), 
                         labels = c("Not_Working", "Working")),
     Weather = factor(weathersit, levels = c(1, 2, 3), 
                      labels = c("Clear", "Mist", "Rain_Snow"))
-  ) %>%
-  # Create dummy variables using tidyr's pivot_wider
-  pivot_wider(names_from = Month, values_from = Month, 
-              values_fn = length, values_fill = 0) %>%
-  pivot_wider(names_from = DOW, values_from = DOW, 
-              values_fn = length, values_fill = 0) %>%
-  # Interaction of WorkingDay and Weather
-  mutate(across(c(WorkingDay, Weather), ~factor(.x))) %>%
-  mutate(WorkingDay_Weather = interaction(WorkingDay, Weather)) %>%
-  pivot_wider(names_from = WorkingDay_Weather, values_from = WorkingDay_Weather, 
-              values_fn = length, values_fill = 0) |> 
-  select(-c(dteday, instant, WorkingDay, Weather)) |> 
-  relocate(Date, cnt) |> 
+  )  |> 
+  select(Date, cnt, Month., DOW., WorkingDay, Weather) |> 
   as_tsibble(index = Date)
 
 # Set up training and validation sets.
-# take advantage of case to eliminate variables we don't want
-bike_ts_vars <- bike_ts |> 
-  select(Date, cnt, 
-         matches('^[A-Z]', ignore.case = FALSE))
 trn_cutoff_date <- max(bike_ts$Date) - days(90)
-bike_trn <- bike_ts_vars |> filter(Date <= trn_cutoff_date )
-bike_val <- bike_ts_vars |> filter(Date > trn_cutoff_date)
+bike_trn <- bike_ts |> filter(Date <= trn_cutoff_date )
+bike_val <- bike_ts |> filter(Date > trn_cutoff_date)
   
-bike_formula_vars <- bike_ts_vars |> 
-  select(-c(Date, cnt, Dec, Sat, Working.Rain_Snow)) |> 
-  names() |> 
-  paste(collapse = " + ") 
-bike_formula <- formula(sprintf("cnt ~ trend() + %s", bike_formula_vars))
-
 bike_tslm <- bike_trn |> 
   model(
-    tslm = TSLM(bike_formula )
+    tslm = TSLM(cnt ~ trend() + Month. + DOW. + WorkingDay:Weather)
   )
 
 bike_tslm |> report()
@@ -256,9 +239,19 @@ bike_tslm |> report()
 
 ```{r}
 # Make tslm forecasts.
-bike.tslm.pred <-  forecast(bike.tslm, newdata = xValid)
+bike_tslm_pred <-  forecast(bike.tslm, newdata = xValid)
 plot(bike.tslm.pred, ylim = c(0, 9000), xlab = "Days", ylab = "Daily Bike Rentals")
 ```
+### Updated Figure 7.6
+
+```{r upd_fig7-6}
+bike_tslm_pred <-  forecast(bike_tslm, new_data = bike_val)
+bike_tslm_pred |> 
+  autoplot(bike_trn) +
+  labs(x = "Days", y = "Daily Bike Rentals") +
+  theme_minimal()
+```
+
 
 ### Walmart Store Data
 
