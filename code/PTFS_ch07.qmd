@@ -9,7 +9,12 @@ execute:
 
 Scripts adapted from [Practical Time Series Forecasting - Datasets & R Code](https://www.forecastingbook.com/resources/data-and-code)
 
-## 
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(fpp3)
+```
 
 ## 7.1 Autocorrelation
 
@@ -31,6 +36,29 @@ ridership.24.ts <- window(ridership.ts, start = c(1991, 1), end = c(1991, 24))
 Acf(ridership.24.ts, lag.max = 12, main = "")
 ```
 
+### Updated Figure 7.2
+
+```{r upd_reload_data_ch7}
+#| warning: false
+#| message: false
+
+library(fpp3)
+library(readxl)
+
+ridership <- read_excel(here::here("data", "Amtrak data.xls"), 
+    col_types = c("date", "numeric")) %>% 
+  mutate(Month = yearmonth(Month)) %>% 
+  as_tsibble(index = Month)
+```
+
+```{r upd_5-2}
+ridership |> 
+  head(24) |> 
+  ACF(Ridership, lag_max = 12) |> 
+  autoplot() +
+  theme_minimal()
+```
+
 ### Figure 7.3
 
 ```{r}
@@ -42,8 +70,24 @@ valid.ts <- window(ridership.ts, start = c(1991, nTrain + 1), end = c(1991, nTra
 train.lm.trend.season <- tslm(train.ts ~ trend + I(trend^2) + season)
 
 # Figure 7-3
-Acf(train.lm.trend.season$residuals, lag.max = 12, main = "")$acf
+Acf(train.lm.trend.season$residuals, lag.max = 12, main = "")
 
+```
+
+### Updated Figure 7.3
+
+```{r upd_7-3}
+train_ts <- ridership |> 
+  filter_index(. ~ "2001 Mar")
+train_lm_trend_season <- train_ts |>
+  model(
+    tslm = TSLM(Ridership ~ trend() + I(trend()^2) + season())
+    ) 
+train_lm_trend_season |> 
+  augment() |> 
+  ACF(.innov, lag_max = 12) |> 
+  autoplot() +
+  theme_minimal()
 ```
 
 ## 7.2 Improving Forecasts by Capturing Autocorrelation: AR and ARIMA Models
@@ -67,11 +111,48 @@ amtrak_ts_annotations(225)
 summary(train.res.arima)
 ```
 
+### Updated Figure 7.4
+
+```{r upd_7-4}
+#fit an ARIMA model to the residuals
+train_res_arima <- train_lm_trend_season |>
+  augment() |> 
+  select(Month, residuals = .innov) |>
+  model(
+    ar1 = ARIMA(residuals ~ 1 + pdq(1, 0, 0))
+  ) 
+
+(train_res_arima |>
+  augment() |> 
+  append_row(n = 36 + 21) |>
+  ggplot(aes(x = Month)) +
+  geom_line(aes(y = .fitted), color = "blue") +
+  geom_line(aes(y = residuals)) +
+  theme_minimal() ) |> 
+  ridership_annotation(y = 200) 
+```
+
+```{r}
+train_res_arima |> report()
+```
+
+*NOTE* - `fable::ARIMA()` constant coefficients are different from `forecast::Arima()` (see [Understanding constants in R](https://otexts.com/fpp3/arima-r.html#understanding-constants-in-r)
+
 ### Figure 7.5
 
 ```{r}
 # Figure 7-5
 Acf(train.res.arima$residuals, lag.max = 12, main = "")
+```
+
+### Updated Figure 7.5
+
+```{r upd_7-5}
+train_res_arima |> 
+  augment() |>
+  ACF(.innov, lag_max = 12) |> 
+  autoplot() +
+  theme_minimal()
 ```
 
 ### Table 7.2
@@ -117,6 +198,58 @@ bike.tslm <- tslm(formula, data = xTrain, lambda = 1)
 
 options(scipen = 999, digits = 6)
 summary(bike.tslm)
+```
+
+### Updated Table 7.2
+
+```{r upd_tbl7-2}
+#| message: false
+bike_ts <- read_csv(bike_daily_csv) %>%
+  # Use mutate to create new variables, and use lubridate functions directly
+  mutate(
+    Date = as.Date(dteday, format = "%Y-%m-%d"),
+    Month = factor(month(Date, label = TRUE)),
+    DOW = factor(wday(Date, label = TRUE, week_start = 1)),
+    WorkingDay = factor(workingday, levels = c(0, 1), 
+                        labels = c("Not_Working", "Working")),
+    Weather = factor(weathersit, levels = c(1, 2, 3), 
+                     labels = c("Clear", "Mist", "Rain_Snow"))
+  ) %>%
+  # Create dummy variables using tidyr's pivot_wider
+  pivot_wider(names_from = Month, values_from = Month, 
+              values_fn = length, values_fill = 0) %>%
+  pivot_wider(names_from = DOW, values_from = DOW, 
+              values_fn = length, values_fill = 0) %>%
+  # Interaction of WorkingDay and Weather
+  mutate(across(c(WorkingDay, Weather), ~factor(.x))) %>%
+  mutate(WorkingDay_Weather = interaction(WorkingDay, Weather)) %>%
+  pivot_wider(names_from = WorkingDay_Weather, values_from = WorkingDay_Weather, 
+              values_fn = length, values_fill = 0) |> 
+  select(-c(dteday, instant, WorkingDay, Weather)) |> 
+  relocate(Date, cnt) |> 
+  as_tsibble(index = Date)
+
+# Set up training and validation sets.
+# take advantage of case to eliminate variables we don't want
+bike_ts_vars <- bike_ts |> 
+  select(Date, cnt, 
+         matches('^[A-Z]', ignore.case = FALSE))
+trn_cutoff_date <- max(bike_ts$Date) - days(90)
+bike_trn <- bike_ts_vars |> filter(Date <= trn_cutoff_date )
+bike_val <- bike_ts_vars |> filter(Date > trn_cutoff_date)
+  
+bike_formula_vars <- bike_ts_vars |> 
+  select(-c(Date, cnt, Dec, Sat, Working.Rain_Snow)) |> 
+  names() |> 
+  paste(collapse = " + ") 
+bike_formula <- formula(sprintf("cnt ~ trend() + %s", bike_formula_vars))
+
+bike_tslm <- bike_trn |> 
+  model(
+    tslm = TSLM(bike_formula )
+  )
+
+bike_tslm |> report()
 ```
 
 ### Figure 7.6
