@@ -239,7 +239,7 @@ bike_tslm |> report()
 
 ```{r}
 # Make tslm forecasts.
-bike_tslm_pred <-  forecast(bike.tslm, newdata = xValid)
+bike.tslm.pred <-  forecast(bike.tslm, newdata = xValid)
 plot(bike.tslm.pred, ylim = c(0, 9000), xlab = "Days", ylab = "Daily Bike Rentals")
 ```
 ### Updated Figure 7.6
@@ -255,4 +255,4 @@ bike_tslm_pred |>
 
 ### Walmart Store Data
 
-Figure 7.7 and 7.8 use data from https://www.kaggle.com/competitions/walmart-recruiting-store-sales-forecasting/data. The dataset is not included here as it would violate the terms of use.
+Figure 7.7 and 7.8 use data from https://www.kaggle.com/competitions/walmart-recruiting-store-sales-forecasting/data, which is not avaialable on the textbook website. The figures are not reproduced here as downloading the dataset would violate the terms of use on Kaggle.
